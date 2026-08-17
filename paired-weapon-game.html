@@ -1,0 +1,2394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paired Weapon Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #06090f;
+    --surface:  #0c1420;
+    --surface2: #111d2e;
+    --border:   #1a2e47;
+    --a:        #00b4ff;
+    --a-dim:    #004a6e;
+    --b:        #ff2850;
+    --b-dim:    #6e001a;
+    --text:     #c8ddf2;
+    --muted:    #4a6a88;
+    --elite-c:  #4da8ff;
+    --mega-c:   #ff4466;
+    --rival-c:  #ffd600;
+    --ultra-c:  #ff9900;
+    --myth-c:   #fffd8f;
+    --leg-c:    #ffb300;
+    --epicv-c:  #a855f7;
+    --rarev-c:  #38bdf8;
+    --commonv-c:#94a3b8;
+  }
+
+  body {
+    font-family: 'Rajdhani', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(0,180,255,0.012) 3px,
+        rgba(0,180,255,0.012) 4px
+      );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,100,200,0.12), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; }
+
+  /* HEADER */
+  header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface2);
+    border: 1px solid var(--a-dim);
+    border-radius: 6px;
+  }
+
+  .logo-icon svg { width: 20px; height: 20px; fill: var(--a); }
+
+  h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    color: #fff;
+    text-transform: uppercase;
+  }
+
+  h1 span { color: var(--a); }
+
+  .tagline {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-top: 0.3rem;
+  }
+
+  /* CONTROL PANEL */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--a), transparent);
+    opacity: 0.5;
+  }
+
+  .panel-title {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 1.25rem;
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 1rem;
+    align-items: end;
+  }
+
+  .controls.has-ctf {
+    grid-template-columns: 1fr 1fr 1fr auto;
+  }
+
+  @media (max-width: 560px) {
+    .controls, .controls.has-ctf { grid-template-columns: 1fr 1fr; }
+    .controls .btn-generate { grid-column: 1 / -1; }
+  }
+
+  .field label {
+    display: block;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .field select,
+  .field input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 0.6rem 0.75rem;
+    outline: none;
+    appearance: none;
+    transition: border-color 0.2s;
+  }
+
+  .field select:focus,
+  .field input:focus {
+    border-color: var(--a);
+    box-shadow: 0 0 0 2px rgba(0,180,255,0.12);
+  }
+
+  .field select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%234a6a88'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.75rem center; padding-right: 2rem; }
+
+  .btn-generate {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #fff;
+    background: var(--a);
+    border: none;
+    border-radius: 7px;
+    padding: 0.68rem 1.5rem;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+    white-space: nowrap;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-generate:hover {
+    background: #22c8ff;
+    box-shadow: 0 0 18px rgba(0,180,255,0.35);
+  }
+
+  .btn-generate:active { transform: scale(0.97); }
+
+  /* RARITY LEGEND */
+  .legend {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1.2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .rarity-pill {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    text-transform: uppercase;
+  }
+
+  .rarity-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+
+  .rarity-pill.elite  { color: var(--elite-c); border-color: rgba(77,168,255,0.3); }
+  .rarity-pill.elite::before  { background: var(--elite-c); }
+  .rarity-pill.mega   { color: var(--mega-c);  border-color: rgba(255,68,102,0.3); }
+  .rarity-pill.mega::before   { background: var(--mega-c); }
+  .rarity-pill.rival  { color: var(--rival-c); border-color: rgba(255,214,0,0.3); }
+  .rarity-pill.rival::before  { background: var(--rival-c); }
+  .rarity-pill.ultra  { color: var(--ultra-c); border-color: rgba(255,153,0,0.3); }
+  .rarity-pill.ultra::before  { background: var(--ultra-c); box-shadow: 0 0 4px var(--ultra-c); }
+
+  /* OUTPUT */
+  #output { animation: fadeIn 0.3s ease; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  .match-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+
+  .match-mode {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1rem, 3vw, 1.4rem);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #fff;
+  }
+
+  .match-mode span { color: var(--a); }
+
+  .match-badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 0.3rem 0.6rem;
+    border-radius: 5px;
+  }
+
+  .teams-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  @media (max-width: 500px) {
+    .teams-grid { grid-template-columns: 1fr; }
+  }
+
+  .team-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .team-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+
+  .team-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+  }
+
+  .teamA .team-header { background: rgba(0,100,180,0.15); }
+  .teamA .team-header::after { background: linear-gradient(90deg, var(--a), transparent); }
+  .teamB .team-header { background: rgba(180,0,40,0.15); }
+  .teamB .team-header::after { background: linear-gradient(90deg, var(--b), transparent); }
+
+  .team-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .teamA .team-dot { background: var(--a); box-shadow: 0 0 8px var(--a); }
+  .teamB .team-dot { background: var(--b); box-shadow: 0 0 8px var(--b); }
+
+  .team-name {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .teamA .team-name { color: var(--a); }
+  .teamB .team-name { color: var(--b); }
+
+  .team-count {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  .player-list { padding: 0.5rem 0; }
+
+  .player-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.15s;
+    animation: slideIn 0.25s ease both;
+  }
+
+  .player-row:last-child { border-bottom: none; }
+  .player-row:hover { background: rgba(255,255,255,0.03); }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-6px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .player-num {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--muted);
+    width: 20px;
+    flex-shrink: 0;
+  }
+
+  .player-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text);
+    flex: 1;
+    padding: 0 0.5rem;
+  }
+
+  .weapon-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    padding: 0.18rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid;
+    text-transform: uppercase;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .weapon-tag.elite  { color: var(--elite-c); border-color: rgba(77,168,255,0.3); background: rgba(77,168,255,0.07); }
+  .weapon-tag.mega   { color: var(--mega-c);  border-color: rgba(255,68,102,0.3); background: rgba(255,68,102,0.07); }
+  .weapon-tag.rival  { color: var(--rival-c); border-color: rgba(255,214,0,0.3);  background: rgba(255,214,0,0.07); }
+  .weapon-tag.ultra  {
+    color: var(--ultra-c);
+    border-color: rgba(255,153,0,0.4);
+    background: rgba(255,153,0,0.1);
+    text-shadow: 0 0 8px rgba(255,153,0,0.5);
+    box-shadow: 0 0 6px rgba(255,153,0,0.15);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 4px rgba(255,153,0,0.15); }
+    50%       { box-shadow: 0 0 10px rgba(255,153,0,0.35); }
+  }
+
+  /* RIVALRIES */
+  .rivalries {
+    margin-top: 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .rivalries-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .rivalries-title {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .rivalry-row {
+    display: flex;
+    align-items: center;
+    padding: 0.6rem 1rem;
+    gap: 0.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 0.9rem;
+    animation: slideIn 0.3s ease both;
+  }
+
+  .rivalry-row:last-child { border-bottom: none; }
+
+  .rival-a { color: var(--a); font-weight: 600; flex: 1; text-align: right; }
+  .rival-b { color: var(--b); font-weight: 600; flex: 1; }
+  .vs-tag   {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    padding: 0 0.4rem;
+  }
+
+  .rival-weapon {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    border: 1px solid;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    flex-shrink: 0;
+    min-width: 56px;
+    text-align: center;
+  }
+
+  .rival-weapon.elite  { color: var(--elite-c); border-color: rgba(77,168,255,0.3); background: rgba(77,168,255,0.07); }
+  .rival-weapon.mega   { color: var(--mega-c);  border-color: rgba(255,68,102,0.3); background: rgba(255,68,102,0.07); }
+  .rival-weapon.rival  { color: var(--rival-c); border-color: rgba(255,214,0,0.3);  background: rgba(255,214,0,0.07); }
+  .rival-weapon.ultra  {
+    color: var(--ultra-c);
+    border-color: rgba(255,153,0,0.4);
+    background: rgba(255,153,0,0.1);
+    animation: pulse 2s infinite;
+  }
+
+  /* CTF SPECIAL EVENTS */
+  .ctf-events {
+    margin-top: 1.25rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  @media (max-width: 500px) { .ctf-events { grid-template-columns: 1fr; } }
+
+  .ctf-event-card {
+    border-radius: 12px;
+    border: 1px solid;
+    overflow: hidden;
+    animation: fadeIn 0.4s ease both;
+  }
+
+  .ctf-event-card.team-a-event {
+    border-color: rgba(0,180,255,0.35);
+    background: rgba(0,60,100,0.25);
+  }
+
+  .ctf-event-card.team-b-event {
+    border-color: rgba(255,40,80,0.35);
+    background: rgba(100,0,30,0.25);
+  }
+
+  .ctf-event-card.no-event {
+    border-color: var(--border);
+    background: var(--surface);
+    opacity: 0.55;
+  }
+
+  .ctf-event-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .ctf-event-card.team-a-event .ctf-event-header { background: rgba(0,180,255,0.08); }
+  .ctf-event-card.team-b-event .ctf-event-header { background: rgba(255,40,80,0.08); }
+
+  .ctf-event-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .team-a-event .ctf-event-label { color: var(--a); }
+  .team-b-event .ctf-event-label { color: var(--b); }
+  .no-event     .ctf-event-label { color: var(--muted); }
+
+  .ctf-event-body {
+    padding: 1.25rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ctf-bonus-num {
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+    font-size: 2.4rem;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .team-a-event .ctf-bonus-num { color: var(--a); text-shadow: 0 0 20px rgba(0,180,255,0.4); }
+  .team-b-event .ctf-bonus-num { color: var(--b); text-shadow: 0 0 20px rgba(255,40,80,0.4); }
+
+  .ctf-event-desc {
+    flex: 1;
+  }
+
+  .ctf-event-name {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #fff;
+    margin-bottom: 0.2rem;
+  }
+
+  .ctf-event-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .ctf-no-event-body {
+    padding: 0.9rem 1rem;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .ctf-section-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .ctf-section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  @keyframes glowIn {
+    from { opacity: 0; transform: scale(0.92); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  .ctf-event-card.triggered { animation: glowIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both; }
+
+  /* GUN GAME */
+  :root {
+    --light-c: #34d399;
+    --med-c:   #fbbf24;
+    --heavy-c: #f87171;
+  }
+
+  .gg-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .gg-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .gg-title {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .gg-dist {
+    display: flex;
+    gap: 0.6rem;
+  }
+
+  .gg-dist-pill {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    border: 1px solid;
+  }
+
+  .gg-dist-pill.light { color: var(--light-c); border-color: rgba(52,211,153,0.3); background: rgba(52,211,153,0.06); }
+  .gg-dist-pill.med   { color: var(--med-c);   border-color: rgba(251,191,36,0.3);  background: rgba(251,191,36,0.06);  }
+  .gg-dist-pill.heavy { color: var(--heavy-c); border-color: rgba(248,113,113,0.3); background: rgba(248,113,113,0.06); }
+
+  .gg-prog-bar {
+    height: 3px;
+    display: flex;
+    overflow: hidden;
+  }
+
+  .gg-prog-seg { height: 100%; transition: width 0.2s; }
+  .gg-prog-seg.light { background: var(--light-c); opacity: 0.7; }
+  .gg-prog-seg.med   { background: var(--med-c);   opacity: 0.7; }
+  .gg-prog-seg.heavy { background: var(--heavy-c); opacity: 0.7; }
+
+  .gg-list { padding: 0; }
+
+  .gg-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.55rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    animation: slideIn 0.2s ease both;
+    transition: background 0.15s;
+  }
+
+  .gg-row:last-child { border-bottom: none; }
+  .gg-row:hover { background: rgba(255,255,255,0.03); }
+
+  .gg-num {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--muted);
+    width: 22px;
+    flex-shrink: 0;
+    text-align: right;
+  }
+
+  .gg-bar {
+    width: 3px;
+    height: 22px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .gg-row.light .gg-bar { background: var(--light-c); box-shadow: 0 0 6px rgba(52,211,153,0.4); }
+  .gg-row.med   .gg-bar { background: var(--med-c);   box-shadow: 0 0 6px rgba(251,191,36,0.4);  }
+  .gg-row.heavy .gg-bar { background: var(--heavy-c); box-shadow: 0 0 6px rgba(248,113,113,0.4); }
+
+  .gg-gun-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text);
+    flex: 1;
+  }
+
+  .gg-class-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    border: 1px solid;
+    flex-shrink: 0;
+  }
+
+  .gg-row.light .gg-class-tag { color: var(--light-c); border-color: rgba(52,211,153,0.3);  background: rgba(52,211,153,0.07);  }
+  .gg-row.med   .gg-class-tag { color: var(--med-c);   border-color: rgba(251,191,36,0.3);   background: rgba(251,191,36,0.07);   }
+  .gg-row.heavy .gg-class-tag { color: var(--heavy-c); border-color: rgba(248,113,113,0.3);  background: rgba(248,113,113,0.07);  }
+
+  .controls.has-extra {
+    grid-template-columns: 1fr 1fr 1fr auto;
+  }
+
+  /* C&R SPECIFIC TEAM COLORS */
+  .teamCops  .team-header { background: rgba(250,204,21,0.1); }
+  .teamCops  .team-header::after { background: linear-gradient(90deg, #facc15, transparent); }
+  .teamCops  .team-dot { background: #facc15; box-shadow: 0 0 8px #facc15; }
+  .teamCops  .team-name { color: #facc15; }
+
+  .teamRobbers .team-header { background: rgba(168,85,247,0.1); }
+  .teamRobbers .team-header::after { background: linear-gradient(90deg, #a855f7, transparent); }
+  .teamRobbers .team-dot { background: #a855f7; box-shadow: 0 0 8px #a855f7; }
+  .teamRobbers .team-name { color: #a855f7; }
+
+  .cr-warn {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    color: #f87171;
+    margin-top: 0.5rem;
+    display: none;
+  }
+
+  /* ── CUPFALL ── */
+  :root {
+    --cf-teal:   #2dd4bf;
+    --cf-orange: #fb923c;
+  }
+
+  .teamCupA .team-header { background: rgba(45,212,191,0.08); }
+  .teamCupA .team-header::after { background: linear-gradient(90deg, var(--cf-teal), transparent); }
+  .teamCupA .team-dot   { background: var(--cf-teal);   box-shadow: 0 0 8px var(--cf-teal); }
+  .teamCupA .team-name  { color: var(--cf-teal); }
+
+  .teamCupB .team-header { background: rgba(251,146,60,0.08); }
+  .teamCupB .team-header::after { background: linear-gradient(90deg, var(--cf-orange), transparent); }
+  .teamCupB .team-dot   { background: var(--cf-orange); box-shadow: 0 0 8px var(--cf-orange); }
+  .teamCupB .team-name  { color: var(--cf-orange); }
+
+  /* ── ROSTER / NAME DATABASE ── */
+  .roster-row {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .roster-row input[type="text"] {
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .btn-sm {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 0.6rem 0.9rem;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-sm:hover { border-color: var(--a); color: var(--a); }
+  .btn-sm.danger:hover { border-color: var(--b); color: var(--b); }
+  .btn-sm.primary { background: var(--a); color: #fff; border-color: var(--a); }
+  .btn-sm.primary:hover { background: #22c8ff; color: #fff; }
+
+  .roster-list {
+    margin-top: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    max-height: 220px;
+    overflow-y: auto;
+    padding-top: 0.25rem;
+  }
+
+  .roster-empty {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.5rem 0;
+  }
+
+  .roster-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 0.3rem 0.4rem 0.3rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text);
+    animation: fadeIn 0.2s ease both;
+  }
+
+  .roster-chip button {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    line-height: 1;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .roster-chip button:hover { background: var(--b-dim); color: #fff; }
+
+  .roster-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.9rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .roster-count {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .roster-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .toggle-row label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--text);
+    text-transform: uppercase;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .toggle-row input[type="checkbox"] {
+    width: 16px; height: 16px;
+    accent-color: var(--a);
+    cursor: pointer;
+  }
+
+  /* ── WEAPON ROLL ODDS ── */
+  .odds-section {
+    margin-top: 1.2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .odds-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+
+  .odds-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.6rem;
+  }
+
+  @media (max-width: 640px) { .odds-row { grid-template-columns: 1fr 1fr; } }
+
+  .odds-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 0.6rem;
+  }
+
+  .odds-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .odds-chip.elite .odds-dot { background: var(--elite-c); box-shadow: 0 0 5px var(--elite-c); }
+  .odds-chip.mega  .odds-dot { background: var(--mega-c);  box-shadow: 0 0 5px var(--mega-c); }
+  .odds-chip.rival .odds-dot { background: var(--rival-c); box-shadow: 0 0 5px var(--rival-c); }
+  .odds-chip.ultra .odds-dot { background: var(--ultra-c); box-shadow: 0 0 5px var(--ultra-c); }
+
+  .odds-name {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text);
+    flex-shrink: 0;
+  }
+
+  .odds-chip input[type="number"] {
+    width: 44px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.72rem;
+    padding: 0.2rem 0.3rem;
+    text-align: center;
+  }
+
+  .odds-pct {
+    margin-left: auto;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--a);
+    flex-shrink: 0;
+  }
+
+  .odds-total {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ── TOGGLE SWITCH ── */
+  .switch-field {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding-bottom: 0.68rem;
+  }
+
+  .switch { position: relative; display: inline-block; width: 38px; height: 22px; cursor: pointer; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+
+  .switch-track {
+    position: absolute; inset: 0;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .switch-track::before {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    left: 3px; top: 3px;
+    background: var(--muted);
+    border-radius: 50%;
+    transition: transform 0.18s, background 0.18s;
+  }
+
+  .switch input:checked + .switch-track { background: var(--a-dim); border-color: var(--a); }
+  .switch input:checked + .switch-track::before { transform: translateX(16px); background: var(--a); box-shadow: 0 0 6px var(--a); }
+
+  .switch-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  /* ── STARTING BOOSTS PANEL ── */
+  .boosts-panel-head { margin-bottom: 1.25rem; }
+
+  .boosts-sub {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .vault-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 1rem;
+    align-items: end;
+  }
+
+  @media (max-width: 640px) {
+    .vault-controls { grid-template-columns: 1fr 1fr; }
+    .vault-controls .btn-generate { grid-column: 1 / -1; }
+  }
+
+  .weights-details {
+    margin-top: 1.25rem;
+    border-top: 1px solid var(--border);
+    padding-top: 0.9rem;
+  }
+
+  .weights-details summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    list-style: none;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text);
+    padding: 0.4rem 0;
+  }
+
+  .weights-details summary::-webkit-details-marker { display: none; }
+
+  .weights-details summary::before {
+    content: '▸';
+    color: var(--a);
+    margin-right: 0.5rem;
+    display: inline-block;
+    transition: transform 0.15s;
+  }
+
+  .weights-details[open] summary::before { transform: rotate(90deg); }
+
+  .summary-hint {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: none;
+  }
+
+  .weights-details-body {
+    padding-top: 0.75rem;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .weights-details-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.9rem;
+  }
+
+  /* ── CUSTOM BOOSTS ── */
+  .custom-boost-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .cb-form-row {
+    display: grid;
+    grid-template-columns: 1fr 160px;
+    gap: 0.6rem;
+  }
+
+  @media (max-width: 560px) { .cb-form-row { grid-template-columns: 1fr; } }
+
+  .custom-boost-form input[type="text"],
+  .custom-boost-form select,
+  .custom-boost-form textarea {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.9rem;
+    padding: 0.55rem 0.7rem;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+
+  .custom-boost-form textarea { resize: vertical; font-family: 'Rajdhani', sans-serif; }
+
+  .custom-boost-form input:focus,
+  .custom-boost-form select:focus,
+  .custom-boost-form textarea:focus { border-color: var(--a); }
+
+  .custom-boost-form .btn-sm { align-self: flex-start; }
+
+  .cb-format-hint {
+    margin-top: 0.75rem;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.02em;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .cb-format-hint code {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.05rem 0.3rem;
+    color: var(--a);
+  }
+
+  .ability-remove {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    line-height: 1;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .ability-remove:hover { background: var(--b-dim); color: #fff; }
+
+  .ability-custom-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .weights-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.75rem;
+  }
+
+  @media (max-width: 640px) { .weights-grid { grid-template-columns: 1fr 1fr; } }
+
+  .weight-field label {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+
+  .weight-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .weight-field.mythic label    { color: var(--myth-c); }
+  .weight-field.mythic .weight-dot    { background: var(--myth-c); box-shadow: 0 0 5px var(--myth-c); }
+  .weight-field.legendary label { color: var(--leg-c); }
+  .weight-field.legendary .weight-dot { background: var(--leg-c); }
+  .weight-field.epic label      { color: var(--epicv-c); }
+  .weight-field.epic .weight-dot      { background: var(--epicv-c); }
+  .weight-field.rare label      { color: var(--rarev-c); }
+  .weight-field.rare .weight-dot      { background: var(--rarev-c); }
+  .weight-field.common label    { color: var(--commonv-c); }
+  .weight-field.common .weight-dot    { background: var(--commonv-c); }
+
+  .weight-input-row { display: flex; align-items: center; gap: 0.4rem; }
+  .weight-input-row input {
+    flex: 1;
+    min-width: 0;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+    padding: 0.4rem 0.5rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .weight-input-row input:focus { border-color: var(--a); }
+  .weight-input-row .odds-pct { font-size: 0.68rem; min-width: 40px; text-align: right; }
+
+  /* ── ABILITY / BOOST CARDS ── */
+  .ability-grid {
+    margin-top: 1.5rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  @media (max-width: 560px) { .ability-grid { grid-template-columns: 1fr; } }
+
+  .ability-card {
+    border-radius: 12px;
+    border: 1px solid;
+    border-left-width: 3px;
+    overflow: hidden;
+    background: var(--surface);
+    animation: glowIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+
+  .ability-card:hover { transform: translateY(-2px); }
+
+  .ability-card.mythic    { border-color: rgba(233, 194, 111, 0.45); border-left-color: var(--myth-c);   background: rgba(235, 209, 126, 0.22); }
+  .ability-card.legendary { border-color: rgba(255,179,0,0.4);  border-left-color: var(--leg-c);    background: rgba(70,45,0,0.2); }
+  .ability-card.epic      { border-color: rgba(168,85,247,0.35);border-left-color: var(--epicv-c);  background: rgba(45,15,75,0.18); }
+  .ability-card.rare      { border-color: rgba(56,189,248,0.3); border-left-color: var(--rarev-c);  background: rgba(0,40,60,0.16); }
+  .ability-card.common    { border-color: var(--border);        border-left-color: var(--commonv-c);background: var(--surface); }
+
+  .ability-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.9rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .ability-player {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .ability-badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.16rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid;
+    font-weight: 700;
+  }
+
+  .ability-badge.mythic    { color: var(--myth-c);   border-color: rgba(214, 203, 105, 0.4);  background: rgba(228, 207, 138, 0.1); text-shadow: 0 0 8px rgba(235, 210, 70, 0.4); animation: pulse 2s infinite; }
+  .ability-badge.legendary { color: var(--leg-c);    border-color: rgba(255,179,0,0.4);   background: rgba(255,179,0,0.1); }
+  .ability-badge.epic      { color: var(--epicv-c);  border-color: rgba(168,85,247,0.35); background: rgba(168,85,247,0.08); }
+  .ability-badge.rare      { color: var(--rarev-c);  border-color: rgba(56,189,248,0.3);  background: rgba(56,189,248,0.08); }
+  .ability-badge.common    { color: var(--commonv-c);border-color: rgba(148,163,184,0.3); background: rgba(148,163,184,0.06); }
+
+  .ability-card-body { padding: 0.9rem 0.9rem 1rem; }
+
+  .ability-name {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #fff;
+    margin-bottom: 0.45rem;
+  }
+
+  .ability-desc {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.88rem;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  .ability-effect {
+    margin-top: 0.6rem;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .vault-empty {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 1rem 0 0.25rem;
+  }
+
+  .cf-boost-hint {
+    margin-top: 1.25rem;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .hidden-file-input { display: none; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="logo-row">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 3h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4zM3 10h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4zM3 17h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4z"/>
+        </svg>
+      </div>
+      <h1>Paired <span>Weapon</span> Generator</h1>
+    </div>
+    <p class="tagline">// balanced matchmaking system v2.0 //</p>
+  </header>
+
+  <div class="panel">
+    <p class="panel-title">// mission parameters</p>
+    <div class="controls">
+      <div class="field">
+        <label>Game Mode</label>
+        <select id="mode" onchange="onModeChange()">
+          <option>Deathmatch</option>
+          <option>Capture the Flag</option>
+          <option>Cop and Robbers</option>
+          <option>Gun Game</option>
+          <option>Cupfall</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Total Players</label>
+        <input type="number" id="players" value="6" min="2" max="40">
+      </div>
+      <div class="field" id="ctf-max-field" style="display:none">
+        <label>Bonus Max</label>
+        <input type="number" id="ctf-max" value="20" min="1" max="9999">
+      </div>
+      <div class="field" id="gg-guns-field" style="display:none">
+        <label>Max Guns</label>
+        <input type="number" id="gg-guns" value="20" min="1" max="100">
+      </div>
+      <div class="field" id="cr-cops-field" style="display:none">
+        <label>Cops</label>
+        <input type="number" id="cr-cops" value="2" min="1" max="39">
+      </div>
+      <button class="btn-generate" onclick="generate()">Deploy ▶</button>
+    </div>
+    <div id="cr-warn" class="cr-warn">⚠ cops must be fewer than robbers — clamped automatically</div>
+    <div class="odds-section">
+      <div class="odds-head">
+        <p class="panel-title" style="margin-bottom:0">// weapon roll odds</p>
+        <button class="btn-sm" onclick="resetWeaponOdds()">Reset Defaults</button>
+      </div>
+      <div class="odds-row" id="weapon-odds-row">
+        <div class="odds-chip elite">
+          <span class="odds-dot"></span>
+          <span class="odds-name">Elite</span>
+          <input type="number" id="ww-elite" value="3" min="0" max="100" oninput="renderWeaponOdds()">
+          <span class="odds-pct" id="wp-elite">—</span>
+        </div>
+        <div class="odds-chip mega">
+          <span class="odds-dot"></span>
+          <span class="odds-name">Mega</span>
+          <input type="number" id="ww-mega" value="2" min="0" max="100" oninput="renderWeaponOdds()">
+          <span class="odds-pct" id="wp-mega">—</span>
+        </div>
+        <div class="odds-chip rival">
+          <span class="odds-dot"></span>
+          <span class="odds-name">Rival</span>
+          <input type="number" id="ww-rival" value="2" min="0" max="100" oninput="renderWeaponOdds()">
+          <span class="odds-pct" id="wp-rival">—</span>
+        </div>
+        <div class="odds-chip ultra">
+          <span class="odds-dot"></span>
+          <span class="odds-name">Ultra</span>
+          <input type="number" id="ww-ultra" value="1" min="0" max="100" oninput="renderWeaponOdds()">
+          <span class="odds-pct" id="wp-ultra">—</span>
+        </div>
+      </div>
+    </div>
+    <div class="toggle-row">
+      <input type="checkbox" id="use-roster" onchange="renderRoster()">
+      <label for="use-roster">Use saved roster names instead of "Player N"</label>
+    </div>
+  </div>
+
+  <!-- ── ROSTER / NAME DATABASE ── -->
+  <div class="panel">
+    <p class="panel-title">// roster / name database</p>
+    <div class="roster-row">
+      <input type="text" id="roster-input" placeholder="Enter a name…" onkeydown="if(event.key==='Enter'){addRosterName();}">
+      <button class="btn-sm primary" onclick="addRosterName()">+ Add Name</button>
+      <button class="btn-sm" onclick="document.getElementById('roster-file').click()">Import .txt</button>
+      <button class="btn-sm" onclick="exportRosterNames()">Export .txt</button>
+      <button class="btn-sm danger" onclick="clearRosterNames()">Clear All</button>
+      <input type="file" id="roster-file" class="hidden-file-input" accept=".txt" onchange="importRosterNames(event)">
+    </div>
+    <div id="roster-list" class="roster-list"></div>
+    <div class="roster-footer">
+      <span id="roster-count" class="roster-count">0 names saved</span>
+      <span class="roster-count">// names persist permanently in this browser</span>
+    </div>
+  </div>
+
+  <!-- ── STARTING BOOSTS (the only boosts menu) ── -->
+  <div class="panel boosts-panel">
+    <div class="boosts-panel-head">
+      <div>
+        <p class="panel-title" style="margin-bottom:0.3rem">// starting boosts</p>
+        <p class="boosts-sub">Roll one or more boosts using the Mythic → Common rarity system</p>
+      </div>
+    </div>
+
+    <div class="vault-controls">
+      <div class="field">
+        <label>Boosts to Roll</label>
+        <input type="number" id="ability-count" value="2" min="1" max="200">
+      </div>
+      <div class="switch-field">
+        <label class="switch">
+          <input type="checkbox" id="ability-dupes">
+          <span class="switch-track"></span>
+        </label>
+        <span class="switch-label">Allow duplicates</span>
+      </div>
+      <div class="switch-field">
+        <label class="switch">
+          <input type="checkbox" id="ability-assign">
+          <span class="switch-track"></span>
+        </label>
+        <span class="switch-label">Assign to roster</span>
+      </div>
+      <button class="btn-generate" onclick="rollAbilities()">Roll Boosts ▶</button>
+    </div>
+
+    <details class="weights-details">
+      <summary>
+        <span>Rarity Chances</span>
+        <span class="summary-hint">tap to adjust odds</span>
+      </summary>
+      <div class="weights-details-body">
+        <div class="weights-details-head">
+          <span class="odds-total" id="ability-weight-total"></span>
+          <button class="btn-sm" onclick="resetAbilityWeights()">Reset Defaults</button>
+        </div>
+        <div class="weights-grid">
+          <div class="weight-field mythic">
+            <label><span class="weight-dot"></span>Mythic</label>
+            <div class="weight-input-row">
+              <input type="number" id="w-mythic" value="2" min="0" max="100" oninput="renderAbilityOdds()">
+              <span class="odds-pct" id="ap-mythic">—</span>
+            </div>
+          </div>
+          <div class="weight-field legendary">
+            <label><span class="weight-dot"></span>Legendary</label>
+            <div class="weight-input-row">
+              <input type="number" id="w-legendary" value="6" min="0" max="100" oninput="renderAbilityOdds()">
+              <span class="odds-pct" id="ap-legendary">—</span>
+            </div>
+          </div>
+          <div class="weight-field epic">
+            <label><span class="weight-dot"></span>Epic</label>
+            <div class="weight-input-row">
+              <input type="number" id="w-epic" value="12" min="0" max="100" oninput="renderAbilityOdds()">
+              <span class="odds-pct" id="ap-epic">—</span>
+            </div>
+          </div>
+          <div class="weight-field rare">
+            <label><span class="weight-dot"></span>Rare</label>
+            <div class="weight-input-row">
+              <input type="number" id="w-rare" value="25" min="0" max="100" oninput="renderAbilityOdds()">
+              <span class="odds-pct" id="ap-rare">—</span>
+            </div>
+          </div>
+          <div class="weight-field common">
+            <label><span class="weight-dot"></span>Common</label>
+            <div class="weight-input-row">
+              <input type="number" id="w-common" value="55" min="0" max="100" oninput="renderAbilityOdds()">
+              <span class="odds-pct" id="ap-common">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="weights-details">
+      <summary>
+        <span>Custom Boosts</span>
+        <span class="summary-hint">add your own — import / export as .json</span>
+      </summary>
+      <div class="weights-details-body">
+        <div class="custom-boost-form">
+          <div class="cb-form-row">
+            <input type="text" id="cb-name" placeholder="Boost name (e.g. Second Wind)" maxlength="60">
+            <select id="cb-rarity">
+              <option value="mythic">Mythic</option>
+              <option value="legendary">Legendary</option>
+              <option value="epic">Epic</option>
+              <option value="rare" selected>Rare</option>
+              <option value="common">Common</option>
+            </select>
+          </div>
+          <textarea id="cb-desc" rows="2" placeholder="What does this boost do?" maxlength="400"></textarea>
+          <button class="btn-sm primary" onclick="addCustomBoost()">+ Add Custom Boost</button>
+        </div>
+
+        <div class="roster-footer" style="margin-top:1rem">
+          <span class="roster-count" id="custom-boost-count">0 custom boosts saved</span>
+          <div class="roster-actions">
+            <button class="btn-sm" onclick="document.getElementById('boost-file').click()">Import .json</button>
+            <button class="btn-sm" onclick="exportCustomBoosts()">Export .json</button>
+            <button class="btn-sm danger" onclick="clearCustomBoosts()">Clear All</button>
+            <input type="file" id="boost-file" class="hidden-file-input" accept=".json" onchange="importCustomBoosts(event)">
+          </div>
+        </div>
+        <p class="cb-format-hint">// import format: a .json file containing an array of objects like <code>{"tier":"epic","name":"Second Wind","desc":"..."}</code>. Valid tiers: mythic, legendary, epic, rare, common.</p>
+
+        <div id="custom-boost-list" class="ability-grid" style="margin-top:1rem"></div>
+      </div>
+    </details>
+
+    <div id="ability-output"></div>
+  </div>
+
+  <div id="output"></div>
+
+</div>
+
+<script>
+// ─────────────────────────────────────
+//  CTF CONFIG
+// ─────────────────────────────────────
+const CTF_CHANCE = 0.25;
+
+// ─────────────────────────────────────
+//  GUN GAME WEAPONS
+// ─────────────────────────────────────
+const GUNS = {
+  light: [
+    "Pistol", "Revolver", "Silenced Pistol", "Combat Pistol",
+    "Snub Nose", "Micro SMG", "Mini UZI", "Machine Pistol",
+    "Tec-9", "P90 Compact"
+  ],
+  med: [
+    "Assault Rifle", "Carbine Rifle", "Special Carbine",
+    "Bullpup Rifle", "Pump Shotgun", "Sawed-Off Shotgun",
+    "Double Barrel", "Battle Rifle", "Compact Rifle", "Tactical SMG"
+  ],
+  heavy: [
+    "Sniper Rifle", "Heavy Sniper", "Marksman Rifle",
+    "LMG", "Combat MG", "Minigun", "RPG",
+    "Grenade Launcher", "Heavy Shotgun", "Rail Gun"
+  ]
+};
+
+// picks a random gun from a class, avoiding repeats if possible
+const _lastGuns = { light: null, med: null, heavy: null };
+function pickGun(cls) {
+  const list = GUNS[cls];
+  let choice;
+  do { choice = list[Math.floor(Math.random() * list.length)]; }
+  while (choice === _lastGuns[cls] && list.length > 1);
+  _lastGuns[cls] = choice;
+  return choice;
+}
+
+// weighted random class selection based on round position t ∈ [0,1]
+// cycle: Light → Medium → Heavy → Light (cosine peaks evenly spaced at 0, 1/3, 2/3)
+function classAtPosition(t) {
+  const PI2 = Math.PI * 2;
+  // Very soft positional nudge — just a slight lean, not a strong pull
+  let wL = 1 + 0.4 * Math.max(0, Math.cos(t * PI2));
+  let wM = 1 + 0.4 * Math.max(0, Math.cos((t - 1/3) * PI2));
+  let wH = 1 + 0.4 * Math.max(0, Math.cos((t - 2/3) * PI2));
+  // Log-normal noise: centers at 1× but can spike anywhere from ~0.1× to 8×
+  // This is what creates true outliers — any class can randomly dominate
+  const blast = () => Math.exp((Math.random() - 0.5) * 3.5);
+  wL *= blast();
+  wM *= blast();
+  wH *= blast();
+  const total = wL + wM + wH;
+  const r = Math.random() * total;
+  if (r < wL) return "light";
+  if (r < wL + wM) return "med";
+  return "heavy";
+}
+
+function generateGunGame(maxGuns) {
+  _lastGuns.light = _lastGuns.med = _lastGuns.heavy = null;
+  const n = Math.max(1, maxGuns);
+  const guns = [];
+
+  for (let i = 0; i < n; i++) {
+    const t = n === 1 ? 0 : i / (n - 1);
+    // Force first and last to always be Light
+    const cls = (i === 0 || i === n - 1) ? "light" : classAtPosition(t);
+    guns.push({ num: i + 1, cls, name: pickGun(cls) });
+  }
+
+  const countL = guns.filter(g => g.cls === "light").length;
+  const countM = guns.filter(g => g.cls === "med").length;
+  const countH = guns.filter(g => g.cls === "heavy").length;
+
+  // coloured progress bar segments (each gun = one pixel-width slot)
+  const segs = guns.map(g =>
+    `<div class="gg-prog-seg ${g.cls}" style="width:${100/n}%"></div>`
+  ).join("");
+
+  const rows = guns.map((g, i) => `
+    <div class="gg-row ${g.cls}" style="animation-delay:${i * 0.025}s">
+      <span class="gg-num">${String(g.num).padStart(2,"0")}</span>
+      <div class="gg-bar"></div>
+      <span class="gg-class-tag">${g.cls === "med" ? "medium" : g.cls}</span>
+    </div>`).join("");
+
+  return `
+    <div class="match-header">
+      <h2 class="match-mode">Gun <span>Game</span></h2>
+      <div class="match-badge">${n} guns · progression round</div>
+    </div>
+    <div class="gg-card">
+      <div class="gg-header">
+        <span class="gg-title">// weapon progression</span>
+        <div class="gg-dist">
+          <span class="gg-dist-pill light">Light ×${countL}</span>
+          <span class="gg-dist-pill med">Medium ×${countM}</span>
+          <span class="gg-dist-pill heavy">Heavy ×${countH}</span>
+        </div>
+      </div>
+      <div class="gg-prog-bar">${segs}</div>
+      <div class="gg-list">${rows}</div>
+    </div>`;
+}
+
+// ─────────────────────────────────────
+//  WEAPON ROLL ODDS
+//  Weights are read live from the "weapon roll odds" chips in the UI,
+//  so every percentage shown is always derived from the same values
+//  actually used to roll a weapon — no hidden numbers.
+// ─────────────────────────────────────
+const WEAPON_TIERS = ["elite", "mega", "rival", "ultra"];
+const WEAPON_TIER_LABEL = { elite: "Elite", mega: "Mega", rival: "Rival", ultra: "Ultra" };
+
+function getWeaponWeights() {
+  const w = {};
+  WEAPON_TIERS.forEach(t => {
+    w[t] = Math.max(0, parseFloat(document.getElementById(`ww-${t}`)?.value) || 0);
+  });
+  return w;
+}
+
+function resetWeaponOdds() {
+  const defaults = { elite: 3, mega: 2, rival: 2, ultra: 1 };
+  WEAPON_TIERS.forEach(t => { document.getElementById(`ww-${t}`).value = defaults[t]; });
+  renderWeaponOdds();
+}
+
+function renderWeaponOdds() {
+  const weights = getWeaponWeights();
+  const total = WEAPON_TIERS.reduce((s, t) => s + weights[t], 0);
+  WEAPON_TIERS.forEach(t => {
+    const el = document.getElementById(`wp-${t}`);
+    if (!el) return;
+    el.textContent = total > 0 ? `${((weights[t] / total) * 100).toFixed(1)}%` : "0%";
+  });
+}
+
+function shuffle(a) {
+  const arr = [...a];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function randomWeapon() {
+  const weights = getWeaponWeights();
+  const total = WEAPON_TIERS.reduce((s, t) => s + weights[t], 0);
+  if (total <= 0) return "ELITE";
+  let r = Math.random() * total;
+  for (const t of WEAPON_TIERS) {
+    r -= weights[t];
+    if (r <= 0) return WEAPON_TIER_LABEL[t].toUpperCase();
+  }
+  return WEAPON_TIER_LABEL[WEAPON_TIERS[WEAPON_TIERS.length - 1]].toUpperCase();
+}
+
+function ctfCard(team, triggered, num) {
+  const label = team === "a" ? "Alpha" : "Bravo";
+  if (!triggered) {
+    return `<div class="ctf-event-card no-event">
+      <div class="ctf-event-header"><span class="ctf-event-label">Team ${label}</span></div>
+      <div class="ctf-no-event-body">No event this round</div>
+    </div>`;
+  }
+  return `<div class="ctf-event-card team-${team}-event triggered">
+    <div class="ctf-event-header"><span class="ctf-event-label">Team ${label}</span></div>
+    <div class="ctf-event-body">
+      <div class="ctf-bonus-num">${num}</div>
+    </div>
+  </div>`;
+}
+
+// ─────────────────────────────────────
+//  CUPFALL
+// ─────────────────────────────────────
+function generateCupfall(total) {
+  const shuffled = shuffle(getPlayerNames(total));
+  const mid = Math.ceil(shuffled.length / 2); // ceil keeps teams even or A gets +1
+  const teamA = shuffled.slice(0, mid);
+  const teamB = shuffled.slice(mid);
+
+  const pairedLen = Math.min(teamA.length, teamB.length);
+  const weaponsA = [], weaponsB = [];
+  for (let i = 0; i < pairedLen; i++) {
+    const w = randomWeapon(); weaponsA.push(w); weaponsB.push(w);
+  }
+  for (let i = pairedLen; i < teamA.length; i++) weaponsA.push(randomWeapon());
+  for (let i = pairedLen; i < teamB.length; i++) weaponsB.push(randomWeapon());
+
+  const html = `
+    <div class="match-header">
+      <h2 class="match-mode">Cup<span>fall</span></h2>
+      <div class="match-badge">${total} players · ${teamA.length}v${teamB.length}</div>
+    </div>
+    <div class="teams-grid">
+      <div class="team-card teamCupA">
+        <div class="team-header">
+          <div class="team-dot"></div>
+          <span class="team-name">Teal</span>
+          <span class="team-count">${teamA.length} players</span>
+        </div>
+        <div class="player-list">
+          ${teamA.map((p, i) => playerRow(i + 1, p, weaponsA[i])).join("")}
+        </div>
+      </div>
+      <div class="team-card teamCupB">
+        <div class="team-header">
+          <div class="team-dot"></div>
+          <span class="team-name">Orange</span>
+          <span class="team-count">${teamB.length} players</span>
+        </div>
+        <div class="player-list">
+          ${teamB.map((p, i) => playerRow(i + 1, p, weaponsB[i])).join("")}
+        </div>
+      </div>
+    </div>
+    <div class="cf-boost-hint">// need starting boosts for this match? Roll them in the Starting Boosts panel above ↑</div>`;
+
+  return html;
+}
+
+function onModeChange() {
+  const mode = document.getElementById("mode").value;
+  const isCTF = mode === "Capture the Flag";
+  const isGG  = mode === "Gun Game";
+  const isCR  = mode === "Cop and Robbers";
+  document.getElementById("ctf-max-field").style.display  = isCTF ? "" : "none";
+  document.getElementById("gg-guns-field").style.display  = isGG  ? "" : "none";
+  document.getElementById("cr-cops-field").style.display  = isCR  ? "" : "none";
+  document.getElementById("cr-warn").style.display        = "none";
+  document.getElementById("players").closest(".field").style.display = isGG ? "none" : "";
+  const ctrl = document.querySelector(".controls");
+  ctrl.classList.toggle("has-extra", isCTF || isGG || isCR);
+}
+
+function generate() {
+  const mode = document.getElementById("mode").value;
+  const out  = document.getElementById("output");
+  document.getElementById("cr-warn").style.display = "none";
+
+  if (mode === "Gun Game") {
+    const maxGuns = Math.max(1, parseInt(document.getElementById("gg-guns").value) || 20);
+    out.innerHTML = generateGunGame(maxGuns);
+    return;
+  }
+
+  const total = Math.max(2, parseInt(document.getElementById("players").value) || 6);
+
+  if (mode === "Cupfall") {
+    out.innerHTML = generateCupfall(total);
+    return;
+  }
+
+  const ctfMax = Math.max(1, parseInt(document.getElementById("ctf-max").value) || 20);
+
+  const shuffled = shuffle(getPlayerNames(total));
+
+  let teamA, teamB, teamALabel, teamBLabel, teamAClass, teamBClass, badgeText, showRivals;
+
+  if (mode === "Cop and Robbers") {
+    const maxCops = total - 1; // cops must always be fewer than robbers
+    let rawCops = Math.max(1, parseInt(document.getElementById("cr-cops").value) || 2);
+    const clamped = rawCops >= Math.ceil(total / 2);
+    const cops = clamped ? Math.max(1, Math.ceil(total / 2) - 1) : rawCops;
+    if (clamped) document.getElementById("cr-warn").style.display = "";
+    teamA = shuffled.slice(0, cops);
+    teamB = shuffled.slice(cops);
+    teamALabel = "Cops"; teamBLabel = "Robbers";
+    teamAClass = "teamCops"; teamBClass = "teamRobbers";
+    badgeText  = `${total} players · ${cops} cops vs ${teamB.length} robbers`;
+    showRivals = false;
+  } else {
+    const mid = Math.floor(shuffled.length / 2);
+    teamA = shuffled.slice(0, mid);
+    teamB = shuffled.slice(mid);
+    teamALabel = "Alpha"; teamBLabel = "Bravo";
+    teamAClass = "teamA"; teamBClass = "teamB";
+    badgeText  = `${total} operators · ${mid}v${teamB.length}`;
+    showRivals = true;
+  }
+
+  const pairedLen = Math.min(teamA.length, teamB.length);
+  const weaponsA = [], weaponsB = [];
+  for (let i = 0; i < pairedLen; i++) {
+    const w = randomWeapon();
+    weaponsA.push(w);
+    weaponsB.push(w);
+  }
+  for (let i = pairedLen; i < teamA.length; i++) weaponsA.push(randomWeapon());
+  for (let i = pairedLen; i < teamB.length; i++) weaponsB.push(randomWeapon());
+
+  const modeWords = mode.split(" ");
+  const modeHTML = modeWords.length > 1
+    ? modeWords[0] + ' <span>' + modeWords.slice(1).join(" ") + '</span>'
+    : '<span>' + mode + '</span>';
+
+  let html = `
+    <div class="match-header">
+      <h2 class="match-mode">${modeHTML}</h2>
+      <div class="match-badge">${badgeText}</div>
+    </div>
+    <div class="teams-grid">
+      <div class="team-card ${teamAClass}">
+        <div class="team-header">
+          <div class="team-dot"></div>
+          <span class="team-name">${teamALabel}</span>
+          <span class="team-count">${teamA.length} players</span>
+        </div>
+        <div class="player-list">
+          ${teamA.map((p, i) => playerRow(i + 1, p, weaponsA[i])).join("")}
+        </div>
+      </div>
+      <div class="team-card ${teamBClass}">
+        <div class="team-header">
+          <div class="team-dot"></div>
+          <span class="team-name">${teamBLabel}</span>
+          <span class="team-count">${teamB.length} players</span>
+        </div>
+        <div class="player-list">
+          ${teamB.map((p, i) => playerRow(i + 1, p, weaponsB[i])).join("")}
+        </div>
+      </div>
+    </div>`;
+
+  if (mode === "Capture the Flag") {
+    const rollA = Math.random() < CTF_CHANCE;
+    const rollB = Math.random() < CTF_CHANCE;
+    const numA  = Math.ceil(Math.random() * ctfMax);
+    let numB;
+    if (rollA && rollB && ctfMax > 1) {
+      do { numB = Math.ceil(Math.random() * ctfMax); } while (numB === numA);
+    } else {
+      numB = Math.ceil(Math.random() * ctfMax);
+    }
+    html += `<div style="margin-top:1.25rem"><div class="ctf-section-label">// ctf field events</div>
+      <div class="ctf-events">` + ctfCard("a", rollA, numA) + ctfCard("b", rollB, numB) + `</div></div>`;
+  }
+
+  if (showRivals && pairedLen > 0) {
+    const rivalRows = Array.from({ length: pairedLen }, (_, i) => `
+      <div class="rivalry-row" style="animation-delay:${i * 0.04}s">
+        <span class="rival-a">${teamA[i]}</span>
+        <span class="vs-tag">VS</span>
+        <span class="rival-b">${teamB[i]}</span>
+        <span class="rival-weapon ${weaponsA[i].toLowerCase()}">${weaponsA[i]}</span>
+      </div>`).join("");
+
+    html += `
+      <div class="rivalries">
+        <div class="rivalries-header">
+          <span class="rivalries-title">// matched rivalries — same weapon, equal ground</span>
+        </div>
+        ${rivalRows}
+      </div>`;
+  }
+
+  out.innerHTML = html;
+}
+
+function playerRow(num, name, weapon) {
+  const cls = weapon.toLowerCase();
+  return `
+    <div class="player-row" style="animation-delay:${num * 0.04}s">
+      <span class="player-num">${String(num).padStart(2, "0")}</span>
+      <span class="player-name">${name}</span>
+      <span class="weapon-tag ${cls}">${weapon}</span>
+    </div>`;
+}
+
+// ─────────────────────────────────────
+//  ROSTER / NAME DATABASE
+//  Persisted permanently in localStorage so saved names
+//  survive page reloads and are reused in future rolls.
+// ─────────────────────────────────────
+const ROSTER_KEY = "pwg_roster_names";
+
+function loadRoster() {
+  try {
+    const raw = localStorage.getItem(ROSTER_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveRoster(list) {
+  try { localStorage.setItem(ROSTER_KEY, JSON.stringify(list)); }
+  catch (e) { /* storage unavailable — fails silently, list still usable this session */ }
+}
+
+let ROSTER = loadRoster();
+
+function renderRoster() {
+  const listEl = document.getElementById("roster-list");
+  const countEl = document.getElementById("roster-count");
+  if (ROSTER.length === 0) {
+    listEl.innerHTML = `<div class="roster-empty">// no names saved yet — add some above</div>`;
+  } else {
+    listEl.innerHTML = ROSTER.map((name, i) => `
+      <div class="roster-chip">
+        <span>${escapeHtml(name)}</span>
+        <button onclick="removeRosterName(${i})" title="Remove">✕</button>
+      </div>`).join("");
+  }
+  countEl.textContent = `${ROSTER.length} name${ROSTER.length === 1 ? "" : "s"} saved`;
+}
+
+function escapeHtml(s) {
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function addRosterName() {
+  const input = document.getElementById("roster-input");
+  const name = input.value.trim();
+  if (!name) return;
+  if (!ROSTER.some(n => n.toLowerCase() === name.toLowerCase())) {
+    ROSTER.push(name);
+    saveRoster(ROSTER);
+    renderRoster();
+  }
+  input.value = "";
+  input.focus();
+}
+
+function removeRosterName(index) {
+  ROSTER.splice(index, 1);
+  saveRoster(ROSTER);
+  renderRoster();
+}
+
+function clearRosterNames() {
+  if (ROSTER.length === 0) return;
+  if (!confirm("Remove all saved names? This cannot be undone.")) return;
+  ROSTER = [];
+  saveRoster(ROSTER);
+  renderRoster();
+}
+
+function exportRosterNames() {
+  const blob = new Blob([ROSTER.join("\n")], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "roster-names.txt";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importRosterNames(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const lines = String(reader.result)
+      .split(/\r?\n/)
+      .map(l => l.trim())
+      .filter(Boolean);
+    let added = 0;
+    lines.forEach(name => {
+      if (!ROSTER.some(n => n.toLowerCase() === name.toLowerCase())) {
+        ROSTER.push(name);
+        added++;
+      }
+    });
+    saveRoster(ROSTER);
+    renderRoster();
+    event.target.value = "";
+  };
+  reader.readAsText(file);
+}
+
+// Returns `count` player-label strings for match generation.
+// Uses saved roster names (cycled/shuffled) when the toggle is on
+// and there is at least one saved name; falls back to "Player N".
+function getPlayerNames(count) {
+  const useRoster = document.getElementById("use-roster")?.checked;
+  if (useRoster && ROSTER.length > 0) {
+    const shuffledRoster = shuffle(ROSTER);
+    const names = [];
+    for (let i = 0; i < count; i++) {
+      names.push(shuffledRoster[i % shuffledRoster.length]);
+    }
+    return names;
+  }
+  return Array.from({ length: count }, (_, i) => `Player ${i + 1}`);
+}
+
+// ─────────────────────────────────────
+//  ABILITY VAULT
+//  Full ability pool using the Mythic / Legendary / Epic / Rare / Common
+//  rarity system. Mythic is intentionally the rarest tier.
+// ─────────────────────────────────────
+const ABILITY_TIERS = ["mythic", "legendary", "epic", "rare", "common"];
+
+
+const ABILITIES = [
+  // ── MYTHIC ──
+  { tier: "mythic", name: "Overdrive", desc: "After two kills, you can activate Overdrive, which allows you to switch to a melee weapon and no longer take any damage. However, if you are hit by a normal attack, you must come to a full stop before continuing. If you are hit by a blue bullet (or a 2x pistol), you must stop and the ability ends. This ability ends if your teammate is killed or if you kill a player. You must also return to your respawn point afterward, but you do not have to wait." },
+  { tier: "mythic", name: "The Human Shield", desc: "This ability allows the user to drop their weapon and no longer be able to deal or take ANY damage. This also means they are not allowed to damage environmental objects (unless it is impossible to avoid). The user also cannot stand too close to enemy players. This ability ends if your teammate is killed or you decide for it too end." },
+  { tier: "mythic", name: "The Hammer", desc: "This ability grants the user the Big Rig weapon (or the RPG if the Big Rig is already taken) with three shots at the start of the match." },
+  { tier: "mythic", name: "200 Pump", desc: "Grants the pump shotgun, which has one special bullet. The bullet automatically deals 3x damage, resulting in a 3x longer respawn time or placement return. After hitting a target, it reverts back to its normal 1x damage. It regains its 3x after getting three kills without dying or suffering any setbacks in between." },
+  { tier: "mythic", name: "Juiced Up", desc: "Get pumped! This ability removes your respawn time after getting a kill, allowing you to instantly respawn once. You can store a maximum of one instant respawn." },
+
+  // ── LEGENDARY ──
+  { tier: "legendary", name: "Swapper", desc: "This ability can only be used once and allows you to switch weapons with the opponent after hitting them." },
+  { tier: "legendary", name: "+1 Curse", desc: "Your team receives one cursed weapon with 3 special shots that can be picked up. Any enemy player hit by it has their current weapon immediately downgraded by one full tier class." },
+  { tier: "legendary", name: "Electrical Revolt", desc: "This ability grants the Revoltinator Zombie Strike weapon. This weapon causes the user to drop their weapon at the location where they were shot." },
+  { tier: "legendary", name: "Golden Pistol", desc: "A pistol is granted at the start of the match and can be used after three kills. While this ability is active, you cannot take any damage and have one shot. However, while in this state, you cannot ascend or descend (i.e., no going up or down stairs), must remain at a walking pace, and are not allowed to damage environmental objects. This ability cannot be used on the top floor, and after firing the single shot, the user must remain where they fired it. This ability also ends if your teammate is killed or you decide for it too end." },
+  { tier: "legendary", name: "Getting Heavy", desc: "Gain a roll of one heavy weapon." },
+  { tier: "legendary", name: "Bodyguard", desc: "Choose one teammate. If they are eliminated while you are alive, your darts immediately count as double till respawn. Can be traded for a small ammo crate." },
+  { tier: "legendary", name: "Ability Breaker", desc: "This can be done only with the Ability Breaker gun. This can be done while your opponent is actively using their ability or if the ability is passive. Can be used once before a cooldown of 3 kills." },
+
+  // ── EPIC ──
+  { tier: "epic", name: "Wall Bouncer", desc: "1 weapon is granted that allows the player to use its bullets off walls and still have them count." },
+  { tier: "epic", name: "Driven Up", desc: "This grants the user a pistol with only one special round. Every time the round successfully hits a target, it gains double damage (maximum x3, meaning 3 successful hits). This also doubles the respawn time. If the shot misses, it returns to the original 1x damage. The special bullet can be picked up." },
+  { tier: "epic", name: "Juggernaut", desc: "One player gains a heavy weapon at the start of the round. Each tier has an equal chance of being selected. The weapon is permanently lost the moment that player is eliminated." },
+  { tier: "epic", name: "Put It All on Red", desc: "High risk, high reward. Flip a coin, all of your team's weapons are either upgraded or downgraded by one class. Alternatively, trade this boost away in exchange for a small ammo crate." },
+  { tier: "epic", name: "Endless Mag", desc: "Upgrades your weapon's magazine, if it can accept one, to the highest possible." },
+  { tier: "epic", name: "Five of Time", desc: "Your respawn time begins at zero, but each elimination increases it by five seconds. The timer resets after reaching a minute." },
+  { tier: "epic", name: "Glass Cannon", desc: "This ability doubles your damage, but it also doubles your opponent’s shot if you’re hit. You can use it as many times as you like, but once activated, it can’t be stopped until you respawn." },
+  { tier: "epic", name: "Second Chance", desc: "After being eliminated, the user may put their weapon on the ground and pick it back up and respawn instantly on the spot, but the user is vulnerable and can be hit in this respawn. Can be used every 2 kills." },
+  { tier: "epic", name: "The King", desc: "Choose one teammate as the \"King.\" While the King is alive, 1 tarot card is given after knocking over a cup. If the King is eliminated, the ability ends permanently." },
+  { tier: "epic", name: "The Last Word", desc: "After being eliminated, you may fire one final shot from your position before returning to the respawn area. If it hits, the target must return to theirs. Can be used after 2 kills." },
+  { tier: "epic", name: "The Jackpot", desc: "You receive 3 tarot cards after knocking over a cup. Can only be used once." },
+  { tier: "epic", name: "Backwards Shot", desc: "If you are shot by the Backwards Gun, you may only move backwards and side to side. If you fail to follow this rule, you must award 1 Tarot Card to the person who hit you." },
+
+  // ── RARE ──
+  { tier: "rare", name: "Shields Up", desc: "1 shield is granted until death. This can only be used once. This can also be traded for a small ammo crate if you already have a shield." },
+  { tier: "rare", name: "Broken Weapon", desc: "This ability allows the user to break their weapon, preventing them from using it until their teammate gets a kill. This grants them a choice of two different weapons selected at the start of the match." },
+  { tier: "rare", name: "Better Mag", desc: "Upgrades your weapon's magazine, if it can accept one, to the next closest magazine size." },
+  { tier: "rare", name: "No Respawn Time", desc: "Start your respawn timer, and you no longer need to wait if you are hit. However, you must return to your respawn area after being hit. Once the timer runs out, you must wait normally if you are hit again." },
+  { tier: "rare", name: "Get Hitting", desc: "Gain a roll of two medium weapons that can be chosen." },
+  { tier: "rare", name: "Shield Buster", desc: "Gain a shield blaster dart for every second kill (start with one). Can only hold one, and the shield is restored if the player returns to their spawn area or kills the player who shot their shield. Bullets cannot be picked up." },
+  { tier: "rare", name: "Marked", desc: "Mark one of your cups (you need all cups to use). If it is knocked over, you receive a small benefit of your choice (instant respawn, ammo create, ability reset, tarot card)" },
+
+  // ── COMMON ──
+  { tier: "common", name: "+1 Cup", desc: "Your team begins the match with one additional cup." },
+  { tier: "common", name: "Switch Type", desc: "This ability allows you to switch your weapon to a different type within the same class. The new weapon is determined by a random roll in the new type." },
+  { tier: "common", name: "+1 Instant Respawn", desc: "One player on your team may instantly respawn once after reaching the respawn area, no wait time. This is a single-use ability and applies to one player of your choice." },
+  { tier: "common", name: "+1 Ammo Crate", desc: "Your team receives an extra ammo crate deployed at the start of the game." },
+  { tier: "common", name: "Small Cups", desc: "A portion of your team's cups shrink in size, making them significantly harder for the enemy to knock off. The number of affected cups is determined by a coin flip." },
+  { tier: "common", name: "Get Strapped", desc: "Gain a roll of two light weapons that can be chosen." },
+  { tier: "common", name: "Cup Repair", desc: "Restore one cup that has been knocked off, returning it to its original position. Single use." }
+];
+
+
+const ABILITY_EFFECT_LABEL = {
+  mythic: "Game-changing",
+  legendary: "Major boost",
+  epic: "Strong boost",
+  rare: "Useful boost",
+  common: "Minor boost"
+};
+
+// ─────────────────────────────────────
+//  CUSTOM BOOSTS
+//  User-defined starting boosts, stored permanently in localStorage and
+//  merged into the same pool as the built-in boosts for rolling. Can be
+//  exported/imported as a plain .json array so people can share packs.
+// ─────────────────────────────────────
+const CUSTOM_BOOSTS_KEY = "pwg_custom_boosts";
+
+function loadCustomBoosts() {
+  try {
+    const raw = localStorage.getItem(CUSTOM_BOOSTS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveCustomBoosts(list) {
+  try { localStorage.setItem(CUSTOM_BOOSTS_KEY, JSON.stringify(list)); }
+  catch (e) { /* storage unavailable — still usable this session */ }
+}
+
+let CUSTOM_BOOSTS = loadCustomBoosts();
+
+// The full rollable pool: built-in abilities + any saved custom boosts.
+function getAllAbilities() {
+  return ABILITIES.concat(CUSTOM_BOOSTS);
+}
+
+function isValidBoostEntry(b) {
+  return b && typeof b === "object"
+    && typeof b.name === "string" && b.name.trim()
+    && typeof b.desc === "string" && b.desc.trim()
+    && ABILITY_TIERS.includes(b.tier);
+}
+
+function customBoostCard(boost, index) {
+  return `<div class="ability-card ${boost.tier}">
+    <div class="ability-card-head">
+      <span class="ability-custom-tag">// custom boost</span>
+      <div style="display:flex; align-items:center; gap:0.5rem;">
+        <span class="ability-badge ${boost.tier}">${boost.tier}</span>
+        <button class="ability-remove" title="Remove" onclick="removeCustomBoost(${index})">✕</button>
+      </div>
+    </div>
+    <div class="ability-card-body">
+      <div class="ability-name">${escapeHtml(boost.name)}</div>
+      <div class="ability-desc">${escapeHtml(boost.desc)}</div>
+      <div class="ability-effect">${ABILITY_EFFECT_LABEL[boost.tier]}</div>
+    </div>
+  </div>`;
+}
+
+function renderCustomBoosts() {
+  const listEl = document.getElementById("custom-boost-list");
+  const countEl = document.getElementById("custom-boost-count");
+  if (!listEl || !countEl) return;
+  countEl.textContent = `${CUSTOM_BOOSTS.length} custom boost${CUSTOM_BOOSTS.length === 1 ? "" : "s"} saved`;
+  listEl.innerHTML = CUSTOM_BOOSTS.length === 0
+    ? `<div class="vault-empty">// no custom boosts yet — add one above or import a .json pack</div>`
+    : CUSTOM_BOOSTS.map((b, i) => customBoostCard(b, i)).join("");
+}
+
+function addCustomBoost() {
+  const nameEl = document.getElementById("cb-name");
+  const rarityEl = document.getElementById("cb-rarity");
+  const descEl = document.getElementById("cb-desc");
+  const name = nameEl.value.trim();
+  const desc = descEl.value.trim();
+  const tier = rarityEl.value;
+
+  if (!name || !desc) {
+    alert("Please enter both a boost name and a description.");
+    return;
+  }
+  if (getAllAbilities().some(a => a.name.toLowerCase() === name.toLowerCase())) {
+    alert(`A boost named "${name}" already exists.`);
+    return;
+  }
+
+  CUSTOM_BOOSTS.push({ tier, name, desc });
+  saveCustomBoosts(CUSTOM_BOOSTS);
+  nameEl.value = "";
+  descEl.value = "";
+  renderCustomBoosts();
+}
+
+function removeCustomBoost(index) {
+  CUSTOM_BOOSTS.splice(index, 1);
+  saveCustomBoosts(CUSTOM_BOOSTS);
+  renderCustomBoosts();
+}
+
+function clearCustomBoosts() {
+  if (CUSTOM_BOOSTS.length === 0) return;
+  if (!confirm("Remove all custom boosts? This cannot be undone.")) return;
+  CUSTOM_BOOSTS = [];
+  saveCustomBoosts(CUSTOM_BOOSTS);
+  renderCustomBoosts();
+}
+
+function exportCustomBoosts() {
+  if (CUSTOM_BOOSTS.length === 0) {
+    alert("No custom boosts to export yet.");
+    return;
+  }
+  const blob = new Blob([JSON.stringify(CUSTOM_BOOSTS, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "custom-boosts.json";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importCustomBoosts(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let parsed;
+    try {
+      parsed = JSON.parse(String(reader.result));
+    } catch (e) {
+      alert("That file isn't valid JSON.");
+      event.target.value = "";
+      return;
+    }
+    if (!Array.isArray(parsed)) {
+      alert('Expected a JSON array of boosts, e.g. [{"tier":"epic","name":"...","desc":"..."}]');
+      event.target.value = "";
+      return;
+    }
+
+    const existingNames = new Set(getAllAbilities().map(a => a.name.toLowerCase()));
+    let added = 0, skippedInvalid = 0, skippedDupe = 0;
+    parsed.forEach(entry => {
+      if (!isValidBoostEntry(entry)) { skippedInvalid++; return; }
+      const name = entry.name.trim();
+      if (existingNames.has(name.toLowerCase())) { skippedDupe++; return; }
+      CUSTOM_BOOSTS.push({ tier: entry.tier, name, desc: entry.desc.trim() });
+      existingNames.add(name.toLowerCase());
+      added++;
+    });
+
+    saveCustomBoosts(CUSTOM_BOOSTS);
+    renderCustomBoosts();
+    event.target.value = "";
+    alert(`Imported ${added} boost${added === 1 ? "" : "s"}.` +
+      (skippedDupe ? ` Skipped ${skippedDupe} duplicate name(s).` : "") +
+      (skippedInvalid ? ` Skipped ${skippedInvalid} invalid entr${skippedInvalid === 1 ? "y" : "ies"}.` : ""));
+  };
+  reader.readAsText(file);
+}
+
+function getAbilityWeights() {
+  const w = {};
+  ABILITY_TIERS.forEach(t => {
+    w[t] = Math.max(0, parseFloat(document.getElementById(`w-${t}`).value) || 0);
+  });
+  return w;
+}
+
+function resetAbilityWeights() {
+  const defaults = { mythic: 2, legendary: 6, epic: 12, rare: 25, common: 55 };
+  ABILITY_TIERS.forEach(t => { document.getElementById(`w-${t}`).value = defaults[t]; });
+  renderAbilityOdds();
+}
+
+function renderAbilityOdds() {
+  const weights = getAbilityWeights();
+  const total = ABILITY_TIERS.reduce((s, t) => s + weights[t], 0);
+  ABILITY_TIERS.forEach(t => {
+    const el = document.getElementById(`ap-${t}`);
+    if (!el) return;
+    el.textContent = total > 0 ? `${((weights[t] / total) * 100).toFixed(1)}%` : "0%";
+  });
+  const totalEl = document.getElementById("ability-weight-total");
+  if (totalEl) totalEl.textContent = `total weight: ${total}`;
+}
+
+// Weighted tier pick, then a uniform random ability within that tier.
+// Draws from the combined built-in + custom boost pool.
+function pickAbility(weights, excludeNames) {
+  const pool = getAllAbilities();
+  const availableTiers = ABILITY_TIERS.filter(t => {
+    const poolForTier = pool.filter(a => a.tier === t && !excludeNames.has(a.name));
+    return weights[t] > 0 && poolForTier.length > 0;
+  });
+  if (availableTiers.length === 0) return null;
+
+  const total = availableTiers.reduce((s, t) => s + weights[t], 0);
+  let r = Math.random() * total;
+  let chosenTier = availableTiers[availableTiers.length - 1];
+  for (const t of availableTiers) {
+    r -= weights[t];
+    if (r <= 0) { chosenTier = t; break; }
+  }
+  const poolForTier = pool.filter(a => a.tier === chosenTier && !excludeNames.has(a.name));
+  return poolForTier[Math.floor(Math.random() * poolForTier.length)];
+}
+
+function abilityCard(ability, playerLabel) {
+  const headExtra = playerLabel
+    ? `<span class="ability-player">${escapeHtml(playerLabel)}</span>`
+    : `<span class="ability-player">// rolled boost</span>`;
+  return `<div class="ability-card ${ability.tier}">
+    <div class="ability-card-head">
+      ${headExtra}
+      <span class="ability-badge ${ability.tier}">${ability.tier}</span>
+    </div>
+    <div class="ability-card-body">
+      <div class="ability-name">${escapeHtml(ability.name)}</div>
+      <div class="ability-desc">${escapeHtml(ability.desc)}</div>
+      <div class="ability-effect">${ABILITY_EFFECT_LABEL[ability.tier]}</div>
+    </div>
+  </div>`;
+}
+
+function rollAbilities() {
+  const out = document.getElementById("ability-output");
+  const weights = getAbilityWeights();
+  const totalWeight = ABILITY_TIERS.reduce((s, t) => s + weights[t], 0);
+  if (totalWeight <= 0) {
+    out.innerHTML = `<div class="vault-empty">// all rarity weights are 0 — raise at least one weight above</div>`;
+    return;
+  }
+
+  const pool = getAllAbilities();
+  const requestedCount = Math.max(1, parseInt(document.getElementById("ability-count").value) || 1);
+  const allowDupes = document.getElementById("ability-dupes").checked;
+  const assignToRoster = document.getElementById("ability-assign").checked;
+
+  const maxPossible = allowDupes ? requestedCount : Math.min(requestedCount, pool.length);
+  const count = maxPossible;
+
+  const results = [];
+  const excludeNames = new Set();
+  for (let i = 0; i < count; i++) {
+    const picked = pickAbility(weights, allowDupes ? new Set() : excludeNames);
+    if (!picked) break;
+    results.push(picked);
+    if (!allowDupes) excludeNames.add(picked.name);
+  }
+
+  if (results.length === 0) {
+    out.innerHTML = `<div class="vault-empty">// no abilities available with the current settings</div>`;
+    return;
+  }
+
+  let playerLabels = [];
+  if (assignToRoster) {
+    playerLabels = ROSTER.length > 0
+      ? getPlayerNames(results.length)
+      : results.map((_, i) => `Player ${i + 1}`);
+  }
+
+  const note = !allowDupes && requestedCount > pool.length
+    ? `<div class="vault-empty">// only ${pool.length} unique boosts exist — showing all of them</div>`
+    : "";
+
+  out.innerHTML = note + `<div class="ability-grid">` +
+    results.map((a, i) => abilityCard(a, assignToRoster ? playerLabels[i] : null)).join("") +
+    `</div>`;
+}
+
+renderRoster();
+renderCustomBoosts();
+renderWeaponOdds();
+renderAbilityOdds();
+onModeChange();
+generate();
+</script>
+</body>
+</html>
